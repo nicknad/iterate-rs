@@ -7,7 +7,7 @@ use crate::{
     crypto::aead::encrypt,
     database::{
         open_database,
-        records::{create_record, update_record},
+        RecordRepository,
     },
     state::AppState,
 };
@@ -69,19 +69,16 @@ pub async fn save_journal_entry(
         return SaveRecordError::InternalError("Unexpected error occured".to_string());
     })?;
 
+    let record_repository = RecordRepository::new(&conn);
+
     if is_new {
-        create_record(
-            &conn,
-            &record_id,
-            &encrypted_blob,
-            None, // Sentiment score
-        )
-        .map_err(|e| {
-            error!("SQL Insert failed: {:?}", e);
-            return SaveRecordError::DatabaseFailure("Record was not saved".to_string());
-        })?;
+        record_repository.insert(&record_id, &encrypted_blob, None)
+            .map_err(|e| {
+                error!("SQL Insert failed: {:?}", e);
+                return SaveRecordError::DatabaseFailure("Record was not saved".to_string());
+            })?;
     } else {
-        update_record(&conn, &record_id, &encrypted_blob).map_err(|e| {
+        record_repository.update(&record_id, &encrypted_blob).map_err(|e| {
             error!("SQL Update failed: {:?}", e);
             return SaveRecordError::DatabaseFailure("Record was not saved".to_string());
         })?;

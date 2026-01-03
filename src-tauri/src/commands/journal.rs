@@ -6,7 +6,10 @@ use zeroize::Zeroize;
 
 use crate::{
     database::open_database,
-    services::{databasecleaner::purge_old_deleted_records, gatekeeper::{initialize_key_store, verify_password}},
+    services::{
+        databasecleaner::purge_old_deleted_records,
+        gatekeeper::{initialize_key_store, verify_password},
+    },
     state::AppState,
 };
 
@@ -104,7 +107,7 @@ pub async fn open_journal(
     let mut db_path_handle = state.db_path.lock();
     *db_path_handle = Some(path);
 
-    let app_conf =  state.app_config.lock();
+    let app_conf = state.app_config.lock();
     if let Err(e) = purge_old_deleted_records(&conn, app_conf.soft_delete_retention_days) {
         error!("DB purge failed: {}", e);
     }
